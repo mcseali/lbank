@@ -1,3 +1,7 @@
+# Git
+.git
+.gitignore
+
 # Python
 __pycache__/
 *.py[cod]
@@ -52,4 +56,22 @@ logs/
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development
+tests/
+test_*.py
+*_test.py
+conftest.py
+pytest.ini
+setup.py
+setup.cfg
+pyproject.toml
+.editorconfig
+.pre-commit-config.yaml
+requirements-dev.txt 
