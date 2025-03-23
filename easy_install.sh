@@ -62,15 +62,61 @@ check_requirements() {
     fi
 }
 
+# Function to install Docker and dependencies
+install_docker() {
+    echo -e "\n${BLUE}Installing Docker and dependencies...${NC}"
+    
+    # Update package list
+    echo -e "${YELLOW}Updating package list...${NC}"
+    apt update &> /dev/null & spinner $!
+    
+    # Install required packages
+    echo -e "${YELLOW}Installing required packages...${NC}"
+    apt install -y \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release &> /dev/null & spinner $!
+    
+    # Add Docker's official GPG key
+    echo -e "${YELLOW}Adding Docker's GPG key...${NC}"
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    
+    # Set up the stable repository
+    echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+        $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    
+    # Install Docker Engine
+    echo -e "${YELLOW}Installing Docker Engine...${NC}"
+    apt update &> /dev/null & spinner $!
+    apt install -y docker-ce docker-ce-cli containerd.io &> /dev/null & spinner $!
+    
+    # Install Docker Compose
+    echo -e "${YELLOW}Installing Docker Compose...${NC}"
+    apt install -y docker-compose &> /dev/null & spinner $!
+    
+    # Start and enable Docker service
+    echo -e "${YELLOW}Starting Docker service...${NC}"
+    systemctl start docker
+    systemctl enable docker
+    
+    # Add current user to docker group
+    echo -e "${YELLOW}Adding user to docker group...${NC}"
+    usermod -aG docker $SUDO_USER
+    
+    # Verify installations
+    echo -e "${GREEN}Docker version:${NC}"
+    docker --version
+    echo -e "${GREEN}Docker Compose version:${NC}"
+    docker-compose --version
+}
+
 # Function to install dependencies
 install_dependencies() {
-    echo -e "\n${BLUE}Installing required packages...${NC}"
-    apt update &> /dev/null & spinner $!
+    echo -e "\n${BLUE}Installing system dependencies...${NC}"
     apt install -y python3 python3-pip python3-venv nginx postgresql redis-server supervisor git certbot python3-certbot-nginx curl &> /dev/null & spinner $!
-    
-    echo -e "\n${BLUE}Installing Node.js...${NC}"
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - &> /dev/null & spinner $!
-    apt install -y nodejs &> /dev/null & spinner $!
 }
 
 # Main installation menu
@@ -86,11 +132,11 @@ main_menu() {
 
         case $choice in
             1)
-                quick_install
+                install_quick
                 break
                 ;;
             2)
-                custom_install
+                install_custom
                 break
                 ;;
             3)
@@ -109,30 +155,50 @@ main_menu() {
 }
 
 # Quick install with default settings
-quick_install() {
+install_quick() {
     echo -e "\n${BLUE}Starting quick installation with default settings...${NC}"
+    
+    # Check requirements
+    check_requirements
+    
+    # Install Docker and dependencies
+    install_docker
     
     # Use default values
     DB_PASSWORD=$DEFAULT_DB_PASSWORD
     DJANGO_SECRET_KEY=$DEFAULT_SECRET_KEY
     DOMAIN_NAME=$DEFAULT_DOMAIN
     
-    # Install dependencies
-    install_dependencies
+    # Clone repository
+    echo -e "\n${BLUE}Cloning repository...${NC}"
+    git clone https://github.com/7766112092/lbank.git /tmp/lbank &> /dev/null & spinner $!
     
-    # Setup database
-    setup_database
+    # Copy files to installation directory
+    echo -e "${YELLOW}Copying files...${NC}"
+    mkdir -p /var/www/lbank
+    cp -r /tmp/lbank/* /var/www/lbank/
     
-    # Configure application
-    configure_application
+    # Start containers
+    echo -e "${YELLOW}Starting Docker containers...${NC}"
+    cd /var/www/lbank
+    docker-compose up --build -d
     
     # Final setup
     finish_installation
 }
 
 # Custom installation with user input
-custom_install() {
+install_custom() {
     echo -e "\n${BLUE}Starting custom installation...${NC}"
+    
+    # Check requirements
+    check_requirements
+    
+    # Install Docker and dependencies
+    install_docker
+    
+    # Get user input for settings
+    echo -e "\n${YELLOW}=== Configuration Settings ===${NC}"
     
     # Domain settings
     echo -e "\n${YELLOW}=== Domain Settings ===${NC}"
@@ -150,76 +216,37 @@ custom_install() {
     read -p "Enter LBank API Key: " LBANK_API_KEY
     read -p "Enter LBank API Secret: " LBANK_API_SECRET
     
-    # Email settings
-    echo -e "\n${YELLOW}=== Email Settings ===${NC}"
-    read -p "Enter email host [default: $DEFAULT_EMAIL_HOST]: " EMAIL_HOST
-    EMAIL_HOST=${EMAIL_HOST:-$DEFAULT_EMAIL_HOST}
-    read -p "Enter email port [default: $DEFAULT_EMAIL_PORT]: " EMAIL_PORT
-    EMAIL_PORT=${EMAIL_PORT:-$DEFAULT_EMAIL_PORT}
-    read -p "Enter email username: " EMAIL_USERNAME
-    read -p "Enter email password: " EMAIL_PASSWORD
-    read -p "Enter sender email address: " EMAIL_FROM
+    # Clone repository
+    echo -e "\n${BLUE}Cloning repository...${NC}"
+    git clone https://github.com/7766112092/lbank.git /tmp/lbank &> /dev/null & spinner $!
     
-    # Install dependencies
-    install_dependencies
+    # Copy files to installation directory
+    echo -e "${YELLOW}Copying files...${NC}"
+    mkdir -p /var/www/lbank
+    cp -r /tmp/lbank/* /var/www/lbank/
     
-    # Setup database
-    setup_database
+    # Create configuration files
+    create_config_files
     
-    # Configure application
-    configure_application
+    # Start containers
+    echo -e "${YELLOW}Starting Docker containers...${NC}"
+    cd /var/www/lbank
+    docker-compose up --build -d
     
     # Final setup
     finish_installation
 }
 
-# Setup database
-setup_database() {
-    echo -e "\n${BLUE}Setting up database...${NC}"
-    su - postgres -c "psql -c \"CREATE DATABASE lbank;\"" &> /dev/null
-    su - postgres -c "psql -c \"CREATE USER lbank WITH PASSWORD '$DB_PASSWORD';\"" &> /dev/null
-    su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE lbank TO lbank;\"" &> /dev/null
-}
-
-# Configure application
-configure_application() {
-    echo -e "\n${BLUE}Configuring application...${NC}"
-    
-    # Create application directory
-    mkdir -p /var/www/lbank
-    cd /var/www/lbank
-    
-    # Clone repository
-    git clone https://github.com/7766112092/lbank.git . &> /dev/null & spinner $!
-    
-    # Setup virtual environment
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt &> /dev/null & spinner $!
-    
-    # Create configuration files
-    create_config_files
-    
-    # Build frontend
-    cd frontend
-    npm install &> /dev/null & spinner $!
-    npm run build &> /dev/null & spinner $!
-}
-
 # Create configuration files
 create_config_files() {
+    echo -e "\n${BLUE}Creating configuration files...${NC}"
+    
     # Create .env file
-    cat > .env << EOL
+    cat > /var/www/lbank/.env << EOL
 DB_PASSWORD=$DB_PASSWORD
-SECRET_KEY=$DJANGO_SECRET_KEY
 DOMAIN_NAME=$DOMAIN_NAME
 LBANK_API_KEY=$LBANK_API_KEY
 LBANK_API_SECRET=$LBANK_API_SECRET
-EMAIL_HOST=$EMAIL_HOST
-EMAIL_PORT=$EMAIL_PORT
-EMAIL_USERNAME=$EMAIL_USERNAME
-EMAIL_PASSWORD=$EMAIL_PASSWORD
-EMAIL_FROM=$EMAIL_FROM
 EOL
 }
 
@@ -227,14 +254,9 @@ EOL
 finish_installation() {
     echo -e "\n${BLUE}Finalizing installation...${NC}"
     
-    # Setup SSL if domain is not localhost
-    if [ "$DOMAIN_NAME" != "localhost" ]; then
-        certbot --nginx -d $DOMAIN_NAME --non-interactive --agree-tos --email admin@$DOMAIN_NAME --redirect &> /dev/null & spinner $!
-    fi
-    
-    # Restart services
-    systemctl restart nginx
-    systemctl restart supervisor
+    # Wait for containers to be ready
+    echo -e "${YELLOW}Waiting for containers to be ready...${NC}"
+    sleep 10
     
     # Show completion message
     echo -e "\n${GREEN}Installation completed successfully!${NC}"
@@ -259,11 +281,22 @@ Domain: $DOMAIN_NAME
 Database Password: $DB_PASSWORD
 Admin Username: admin
 Admin Password: admin123
-Email Host: $EMAIL_HOST
-Email Username: $EMAIL_USERNAME
 LBank API Key: $LBANK_API_KEY
 EOL
     chmod 600 /root/lbank_credentials.txt
+    
+    echo -e "\n${YELLOW}Next Steps:${NC}"
+    echo -e "1. If you haven't already, please log out and log back in for Docker permissions to take effect"
+    echo -e "2. Access your application at http://$DOMAIN_NAME"
+    echo -e "3. Change the default admin password"
+    echo -e "4. Configure your trading settings"
+    echo -e "5. Monitor your logs with: docker-compose logs -f"
+    
+    echo -e "\n${YELLOW}Troubleshooting:${NC}"
+    echo -e "1. If you can't access the application, check container status: docker-compose ps"
+    echo -e "2. View container logs: docker-compose logs -f [service_name]"
+    echo -e "3. Restart containers: docker-compose restart"
+    echo -e "4. For more help, visit: https://github.com/7766112092/lbank/issues"
 }
 
 # Start installation
