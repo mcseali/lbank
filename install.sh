@@ -55,7 +55,7 @@ chown -R lbank:lbank /var/www/lbank
 # کلون کردن مخزن
 echo -e "${BLUE}Cloning repository...${NC}"
 cd /var/www/lbank
-su - lbank -c "git clone https://github.com/yourusername/lbank.git ."
+su - lbank -c "git clone https://github.com/7766112092/lbank.git ."
 
 # ایجاد محیط مجازی پایتون
 echo -e "${BLUE}Setting up Python virtual environment...${NC}"
